@@ -1,102 +1,98 @@
 import './styles.css';
 
 import Notiflix from 'notiflix';
-//import SimpleLightbox from "simplelightbox";
-//import "simplelightbox/dist/simple-lightbox.min.css";
-import { PixabayAPI } from './pixabay-api.js';
-
-
-const searchFormEl = document.querySelector('#search__form');
-const galleryListEl = document.querySelector('.gallery');
-const loadMoreButtonEl = document.querySelector('.js__load-more');
+import SimpleLightbox from "simplelightbox";
+import "simplelightbox/dist/simple-lightbox.min.css";
+const formItem = document.querySelector('#search-form');
+const inputItem = document.querySelector('input[name="searchQuery"]');
+const galleryItem = document.querySelector('.gallery');
+const btnMore = document.querySelector('.load-more');
 const alertItem = document.querySelector('.text');
 
-const pixabayAPI = new PixabayAPI();
+const BASE_URL = 'https://pixabay.com/api';
+const KEY = '32848504-113b5416049b5c8ff07c52596';
 
-const onSearchFormSubmit = async event => {
+formItem.addEventListener('submit', onSubmit);
+btnMore.addEventListener('click', onClick);
+
+function onSubmit(event) {
   event.preventDefault();
+  keyInput = inputItem.value;
+  galleryItem.innerHTML = '';
+  alertItem.classList.add('hidden');
 
-  pixabayAPI.query = event.currentTarget.searchQuery.value;
-  pixabayAPI.page = 1;
-  galleryListEl.innerHTML = '';
+  page = 1;
 
+  if (!keyInput.trim()) {
+    Notiflix.Notify.info('Oops! Please, enter smth to search.');
+    btnMore.classList.add('hidden');
+    return;
+  }
+  getImg(keyInput);
+  event.currentTarget.reset();
+}
+
+function onClick() {
+  getImg(keyInput);
+}
+
+async function getImg(keyWord) {
   try {
-    const { data } = await pixabayAPI.fetchPhotosByQuery();
-    if (!data.hits.length) {
+    const response = await axios.get(
+      `${BASE_URL}/?key=${KEY}&q=${keyWord}&image_type=photo&orientation=horizontal&safesearch=true&per_page=40&page=${page}`
+    );
+    if (!response.data.hits.length) {
       Notiflix.Notify.failure(
         'Sorry, there are no images matching your search query. Please try again.'
       );
-      event.target.reset();
-      galleryListEl.innerHTML = '';
-
-      alertItem.classList.remove('is-hidden');
-      loadMoreButtonEl.classList.add('is-hidden');
+      btnMore.classList.add('hidden');
+      alertItem.classList.add('hidden');
       return;
-    } else if (data.hits.length < 40) {
-      createGalleryCards(data.hits);
-      // Notiflix.Notify.info("We're sorry, but you've reached the end of search results");
-
-      alertItem.classList.remove('is-hidden');
-      loadMoreButtonEl.classList.add('is-hidden');
-    } else {
-      createGalleryCards(data.hits);
-
-      Notiflix.Notify.info(`Hooray! We found ${data.totalHits} images`);
-      loadMoreButtonEl.classList.remove('is-hidden');
+    }
+    
+    
+    if (page > totalPages) {
+      return toogleAlertMarkup();
     }
   } catch (error) {
     console.log(error);
   }
-};
-
-const onLoadMoreButtonClick = async event => {
-  pixabayAPI.page += 1;
-  try {
-    const { data } = await pixabayAPI.fetchPhotosByQuery();
-    if (data.hits.length < 40 || pixabayAPI.page === 13) {
-      // Notiflix.Notify.info("We're sorry, but you've reached the end of search results");
-      createGalleryCards(data.hits);
-      alertItem.classList.remove('is-hidden');
-      loadMoreButtonEl.classList.add('is-hidden');
-    } else {
-      createGalleryCards(data.hits);
-
-      Notiflix.Notify.info(`Hooray! We found ${data.totalHits} images`);
-    }
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-function createGalleryCards(arr) {
-  const galleryCardsArray = arr
-    .map(({ webformatURL, tags, likes, views, comments, downloads }) => {
-      return `<div class="photo__card">
-            <img src="${webformatURL}" alt="${tags}" loading="lazy" width="300" height="200"/>
-            <div class="info">
-              <p class="info__item">
-                <b>Likes:&nbsp</b>${likes}
-              </p>
-              <p class="info__item">
-                <b>Views:&nbsp </b>${views}
-              </p>
-              <p class="info__item">
-                <b>Comments:&nbsp </b>${comments}
-              </p>
-              <p class="info__item">
-                <b>Downloads:&nbsp </b>${downloads}
-              </p>
-            </div>
-          </div>`;
-    })
-    .join('');
-  galleryListEl.insertAdjacentHTML('beforeend', galleryCardsArray);
 }
 
-// function togleAlertMarkup() {
-//   alertItem.classList.remove('is-hidden');
-//   loadMoreButtonEl.classList.add('is-hidden');
-// }
+function createGallery(images) {
+  const markup = images
+    .map(image => {
+      return `<div class="photo__card">
+      <a href="${image.largeImageURL}">
+      <img src="${image.webformatURL}" alt="${image.tags}" loading="lazy" />
+      </a>
+      <div class="info">
+      <p class="info__item"><b>Likes</b>${image.likes}</p>
+      <p class="info__item"><b>Views</b>${image.views}</p>
+      <p class="info__item"><b>Comments</b>${image.comments}</p>
+      <p class="info__item"><b>Downloads</b>${image.downloads}</p>
+      </div>
+      </div>`;
+    })
+    .join('');
+  galleryItem.insertAdjacentHTML('beforeend', markup);
+  if (page > 1) {
+    const { height: cardHeight } = document
+      .querySelector('.gallery')
+      .firstElementChild.getBoundingClientRect();
 
-loadMoreButtonEl.addEventListener('click', onLoadMoreButtonClick);
-searchFormEl.addEventListener('submit', onSearchFormSubmit);
+    window.scrollBy({
+      top: cardHeight * 2,
+      behavior: 'smooth',
+    });
+  }
+  gallery.refresh();
+}
+
+  function toogleAlertMarkup() {
+    alertItem.classList.remove('hidden');
+    btnMore.classList.add('hidden');
+  }
+
+
+

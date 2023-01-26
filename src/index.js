@@ -1,12 +1,13 @@
 import './styles.css';
-
+import axios from 'axios';
 import Notiflix from 'notiflix';
-import SimpleLightbox from "simplelightbox";
-import "simplelightbox/dist/simple-lightbox.min.css";
-const formItem = document.querySelector('#search-form');
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
+
+const formItem = document.querySelector('#search__form');
 const inputItem = document.querySelector('input[name="searchQuery"]');
 const galleryItem = document.querySelector('.gallery');
-const btnMore = document.querySelector('.load-more');
+const btnMore = document.querySelector('.load__more');
 const alertItem = document.querySelector('.text');
 
 const BASE_URL = 'https://pixabay.com/api';
@@ -14,6 +15,10 @@ const KEY = '32848504-113b5416049b5c8ff07c52596';
 
 formItem.addEventListener('submit', onSubmit);
 btnMore.addEventListener('click', onClick);
+
+let page = 1;
+let keyInput = '';
+let totalPages = 0;
 
 function onSubmit(event) {
   event.preventDefault();
@@ -49,8 +54,16 @@ async function getImg(keyWord) {
       alertItem.classList.add('hidden');
       return;
     }
-    
-    
+
+    if (page === 1) {
+      Notiflix.Notify.success(
+        `Hooray! We found ${response.data.totalHits} images.`
+      );
+    }
+    btnMore.classList.remove('hidden');
+    totalPages = Math.ceil(response.data.totalHits / 40);
+    createGallery(response.data.hits);
+    page += 1;
     if (page > totalPages) {
       return toogleAlertMarkup();
     }
@@ -64,7 +77,7 @@ function createGallery(images) {
     .map(image => {
       return `<div class="photo__card">
       <a href="${image.largeImageURL}">
-      <img src="${image.webformatURL}" alt="${image.tags}" loading="lazy" />
+      <img src="${image.webformatURL}" alt="${image.tags}" loading="lazy" width="100%" height="300px"/>
       </a>
       <div class="info">
       <p class="info__item"><b>Likes</b>${image.likes}</p>
@@ -75,24 +88,16 @@ function createGallery(images) {
       </div>`;
     })
     .join('');
-  galleryItem.insertAdjacentHTML('beforeend', markup);
-  if (page > 1) {
-    const { height: cardHeight } = document
-      .querySelector('.gallery')
-      .firstElementChild.getBoundingClientRect();
-
-    window.scrollBy({
-      top: cardHeight * 2,
-      behavior: 'smooth',
-    });
+  
   }
-  gallery.refresh();
+
+function toogleAlertMarkup() {
+  alertItem.classList.remove('hidden');
+  btnMore.classList.add('hidden');
 }
-
-  function toogleAlertMarkup() {
-    alertItem.classList.remove('hidden');
-    btnMore.classList.add('hidden');
-  }
-
-
-
+const gallery = new SimpleLightbox('.gallery a', {
+  captionsData: 'alt',
+  captionsDelay: 250,
+  scrollZoom: false,
+  scrollZoomFactor: 0,
+});

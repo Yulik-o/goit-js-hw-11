@@ -43,8 +43,10 @@ ol {
   display: block;
   margin: 0, auto;
   justify-content: center;
+  width: 90px;
+  height: 30px;
 }
-.load__more.is-hidden {
+.load__more.hidden {
   display: none;
 }
 
@@ -78,11 +80,15 @@ margin-top: 10px;
   background-color: #B0C4DE;
   border: none;
 }
-.is-hidden {
+.hidden {
   display: none;
 }
 .text {
   text-align: center;
   margin-top: 20px;
   padding-bottom: 20px;
+}
+
+.photo__card {
+  width: calc((100% - 60px) / 3);
 }
